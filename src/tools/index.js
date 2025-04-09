@@ -17,10 +17,15 @@ import {
 
 // Format date
 function formatDate(date = new Date()) {
+  // Clone the date to avoid modifying the original
+  const localDate = new Date(date);
+  // Set time to noon to avoid timezone issues affecting the date
+  localDate.setHours(12, 0, 0, 0);
+  
   return {
-    dayOfWeek: format(date, 'EEEE'),
-    fullDate: format(date, 'MMMM d, yyyy'),
-    isoDate: format(date, 'yyyy-MM-dd')
+    dayOfWeek: format(localDate, 'EEEE'),
+    fullDate: format(localDate, 'MMMM d, yyyy'),
+    isoDate: format(localDate, 'yyyy-MM-dd')
   };
 }
 
@@ -92,29 +97,23 @@ export function getToolDefinitions() {
         type: "object",
         properties: {
           date: { type: "string" },
-          content: {
+          accomplishments: {
             type: "array",
-            description: "A list of entries categories by Accomplishments and Insights and TODOS",
-            accomplishments: {
-              type: "array",
-              items: { type: "string" },
-              description: "A list of accomplishments. Each accomplishment should be a short description of the work done in the day so that it can answer the question 'what did you do all day?'",
-              required: true
-            },
-            insights: {
-              type: "array",  
-              items: { type: "string" },
-              description: "A list of insights. Each insight should be a long-term storage. Things like new knowledge gained. Do not force insights - only add ones that naturally emerge from the content and would help build meaningful connections between notes.",
-              required: true
-            },
-            todos: {
-              type: "array",
-              items: { type: "string" },
-              description: "A list of todos. Each todo should be a short description of the task to be done. A todo should be actionable.",
-              required: false
-            }
-          }
-        }
+            items: { type: "string" },
+            description: "A list of accomplishments. Each accomplishment should be a short description of the work done in the day so that it can answer the question 'what did you do all day?'",
+          },
+          insights: {
+            type: "array",  
+            items: { type: "string" },
+            description: "A list of insights. Each insight should be a long-term storage. Things like new knowledge gained. Do not force insights - only add ones that naturally emerge from the content and would help build meaningful connections between notes.",
+          },
+          todos: {
+            type: "array",
+            items: { type: "string" },
+            description: "A list of todos. Each todo should be a short description of the task to be done. A todo should be actionable.",
+          },
+        },
+        required: ["accomplishments", "insights"]
       },
     },
     {
@@ -217,20 +216,20 @@ export async function handleToolCall(notesPath, name, args) {
           
           // Format achievements if provided
           let achievements = "";
-          if (args.content && args.content.accomplishments) {
-            achievements = args.content.accomplishments.map(item => `- ${item}`).join('\n');
+          if (args.accomplishments) {
+            achievements = args.accomplishments.map(item => `- ${item}`).join('\n');
           }
           
           // Format insights if provided
           let insights = "";
-          if (args.content && args.content.insights) {
-            insights = args.content.insights.map(item => `- ${item}`).join('\n');
+          if (args.insights) {
+            insights = args.insights.map(item => `- ${item}`).join('\n');
           }
 
           // Format todos if provided
           let todos = "";
-          if (args.content && args.content.todos) {
-            todos = args.content.todos.map(item => `- ${item}`).join('\n');
+          if (args.todos) {
+            todos = args.todos.map(item => `- ${item}`).join('\n');
           }
           
           // Load the template and process it

@@ -14,10 +14,11 @@
     "start": "node index.js",
     "build": "mkdir -p dist && cp -r index.js src prompts search-utils.js dist/",
     "prepare": "npm run build",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "dev": "npx @modelcontextprotocol/inspector node index.js 'Notes'"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.8.0",
+    "@modelcontextprotocol/sdk": "^1.9.0",
     "date-fns": "^4.1.0",
     "minimatch": "^10.0.1"
   },
