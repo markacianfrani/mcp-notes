@@ -1,0 +1,213 @@
+# MCP Notes Project Rules
+
+## Code Style and Patterns
+
+1. **ES Modules**: Use ES Module syntax (import/export) rather than CommonJS (require/module.exports).
+   ```javascript
+   // Good
+   import { format } from 'date-fns';
+   export function formatDate() { ... }
+   
+   // Avoid
+   const format = require('date-fns').format;
+   module.exports.formatDate = function() { ... }
+   ```
+
+2. **Async/Await**: Use async/await for asynchronous operations rather than callbacks or raw promises.
+   ```javascript
+   // Good
+   async function readFile(path) {
+     try {
+       const content = await fs.readFile(path, 'utf8');
+       return content;
+     } catch (error) {
+       console.error(`Error reading file: ${error.message}`);
+       throw error;
+     }
+   }
+   
+   // Avoid
+   function readFile(path) {
+     return fs.readFile(path, 'utf8')
+       .then(content => content)
+       .catch(error => {
+         console.error(`Error reading file: ${error.message}`);
+         throw error;
+       });
+   }
+   ```
+
+3. **Error Handling**: Use try/catch blocks for error handling and provide descriptive error messages.
+   ```javascript
+   // Good
+   try {
+     await fs.writeFile(path, content, 'utf8');
+   } catch (error) {
+     console.error(`Error writing file ${path}: ${error.message}`);
+     return {
+       success: false,
+       error: `Failed to write file: ${error.message}`
+     };
+   }
+   ```
+
+4. **Path Validation**: Always validate file paths to prevent access outside the notes directory.
+   ```javascript
+   // Good
+   const filePath = path.join(notesPath, relativePath);
+   if (!filePath.startsWith(notesPath)) {
+     throw new Error("Access denied - path outside notes directory");
+   }
+   ```
+
+5. **JSDoc Comments**: Use JSDoc comments for all functions and classes.
+   ```javascript
+   /**
+    * Creates or updates the daily log file
+    * 
+    * @param {string} notesPath - Base path for notes directory
+    * @param {string} notes - Content to append to the log (optional)
+    * @returns {Promise<Object>} - Result object with success status, path, and content
+    */
+   async function createDailyLog(notesPath, notes = "") {
+     // Implementation...
+   }
+   ```
+
+## Project Structure
+
+1. **Directory Organization**:
+   - `/src`: Source code
+   - `/prompts`: Templates and prompt-related files
+   - `/memory-bank`: Project documentation
+
+2. **Module Organization**:
+   - `index.js`: Main entry point
+   - `src/tools/index.js`: Tool definitions and implementations
+   - `src/resources/index.js`: Resource definitions and implementations
+   - `prompts/template-loader.js`: Template loading utilities
+   - `search-utils.js`: Search utilities
+
+## Documentation Practices
+
+1. **README.md**: Maintain a comprehensive README with:
+   - Project overview
+   - Installation instructions
+   - Usage examples
+   - Configuration options
+   - Available tools
+
+2. **Memory Bank**: Keep the memory bank up to date with:
+   - Project brief
+   - Product context
+   - System patterns
+   - Technical context
+   - Active context
+   - Progress tracking
+
+3. **Code Comments**: Use descriptive comments for complex logic.
+   ```javascript
+   // Extract tags from [tag1, tag2] format
+   const tagsMatch = value.match(/\[(.*)\]/);
+   if (tagsMatch) {
+     frontmatter.tags = tagsMatch[1]
+       .split(',')
+       .map(tag => tag.trim());
+   }
+   ```
+
+## Tool Implementation Patterns
+
+1. **Tool Definition Structure**:
+   ```javascript
+   {
+     name: "tool_name",
+     description: "Clear description of what the tool does",
+     inputSchema: {
+       type: "object",
+       properties: {
+         param1: { 
+           type: "string",
+           description: "Description of parameter"
+         }
+       },
+       required: ["param1"]
+     }
+   }
+   ```
+
+2. **Tool Handler Structure**:
+   ```javascript
+   case "tool_name": {
+     try {
+       // Validate parameters
+       if (!args.param1) {
+         throw new Error("'param1' parameter is required");
+       }
+       
+       // Perform operation
+       const result = await performOperation(args.param1);
+       
+       // Return success response
+       return {
+         content: [{ 
+           type: "text", 
+           text: `Operation completed: ${result}` 
+         }]
+       };
+     } catch (error) {
+       // Return error response
+       return {
+         content: [{ 
+           type: "text", 
+           text: `Error: ${error.message}` 
+         }],
+         isError: true
+       };
+     }
+   }
+   ```
+
+## Testing Practices
+
+1. **Manual Testing**: Test each tool with:
+   - Valid inputs
+   - Invalid inputs
+   - Edge cases
+
+2. **Error Testing**: Verify error handling for:
+   - Missing parameters
+   - Invalid file paths
+   - File system errors
+
+3. **Documentation Testing**: Verify that documentation is:
+   - Accurate
+   - Complete
+   - Up to date
+
+## Deployment Practices
+
+1. **Configuration**: Configure the server in Claude Desktop:
+   ```json
+   {
+     "mcpServers": {
+       "notes": {
+         "command": "node",
+         "args": [
+           "/path/to/mcp-notes/index.js",
+           "/path/to/notes/directory"
+         ],
+         "cwd": "/path/to/mcp-notes"
+       }
+     }
+   }
+   ```
+
+2. **Notes Directory**: Ensure the notes directory is:
+   - Accessible to the server
+   - Backed up regularly
+   - Not in a temporary location
+
+3. **Permissions**: Ensure the server has:
+   - Read/write permissions for the notes directory
+   - Execute permissions for the server script

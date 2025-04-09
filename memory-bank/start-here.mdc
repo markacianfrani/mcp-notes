@@ -1,0 +1,51 @@
+# MCP Notes Memory Bank
+
+Welcome to the MCP Notes Memory Bank. This is the entry point for understanding the project and its current state.
+
+## Memory Bank Structure
+
+The Memory Bank consists of the following core files:
+
+1. **projectbrief.md**: Foundation document that defines core requirements and goals.
+2. **productContext.md**: Why this project exists, problems it solves, and how it should work.
+3. **systemPatterns.md**: System architecture, key technical decisions, and design patterns.
+4. **techContext.md**: Technologies used, development setup, and technical constraints.
+5. **activeContext.md**: Current work focus, recent changes, and next steps.
+6. **progress.md**: What works, what's left to build, and known issues.
+7. **.clinerules**: Project-specific patterns and preferences.
+
+## How to Use This Memory Bank
+
+1. Start with **projectbrief.md** to understand the core requirements and goals.
+2. Read **productContext.md** to understand why this project exists and the problems it solves.
+3. Explore **systemPatterns.md** to understand the system architecture and design patterns.
+4. Review **techContext.md** to understand the technologies used and technical constraints.
+5. Check **activeContext.md** to understand the current work focus and recent changes.
+6. Examine **progress.md** to understand what works and what's left to build.
+7. Refer to **.clinerules** for project-specific patterns and preferences.
+
+## Current Project Status
+
+The MCP Notes project is in a **stable, functional state** with core features implemented and documented. The current focus is on documentation and cleanup, with plans for testing improvements and feature enhancements in the future.
+
+## Recent Milestones
+
+1. ✅ Added comprehensive JSDoc comments to key files
+2. ✅ Created detailed README.md
+3. ✅ Initialized memory bank with core documentation
+
+## Next Steps
+
+1. 🔄 Create manual test script
+2. 🔄 Improve error handling
+3. 🔄 Test with different note directory structures
+
+## How to Update This Memory Bank
+
+When making significant changes to the project, update the relevant memory bank files to reflect the current state. In particular:
+
+1. Update **activeContext.md** with the current work focus and recent changes.
+2. Update **progress.md** with what works and what's left to build.
+3. Update other files as needed to reflect changes in requirements, architecture, or technologies.
+
+Remember that this memory bank is the primary source of project knowledge, so keep it up to date and accurate.
