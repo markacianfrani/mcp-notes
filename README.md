@@ -12,6 +12,7 @@ A personal knowledge management system built on the Model Context Protocol (MCP)
    git clone git@github.com:markacianfrani/mcp-notes.git
    cd mcp-notes
    npm i
+   npm run build
    ```
 
 2. **Setup MCP**
@@ -24,7 +25,7 @@ Add to your claude-desktop-config.json:
 "notes": {
     "command": "node",
     "args": [
-        "path/to/this/repo/mcp-notes/index.js",
+        "path/to/this/repo/mcp-notes/dist/index.js",
         "path/to/your/notes"
     ],
 },

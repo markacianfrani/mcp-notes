@@ -36,7 +36,25 @@ const NOTES_PATH =
 // Initialize the directories
 await initializeNotesDirectory(NOTES_PATH);
 
-const PROMPTS = {
+// Define prompt types
+interface PromptBase {
+    name: string;
+    description: string;
+}
+
+interface AtomicPrompt extends PromptBase {
+    arguments: Array<{
+        name: string;
+        description: string;
+        required: boolean;
+    }>;
+}
+
+interface Prompts {
+    [key: string]: PromptBase | AtomicPrompt;
+}
+
+const PROMPTS: Prompts = {
     "end-of-day": {
         name: "end-of-day",
         description:
@@ -98,13 +116,7 @@ server.setRequestHandler(GetPromptRequestSchema, async (request) => {
             messages: [
                 { role: "assistant", 
                     content: { type: "text", text: `
-You are an experienced note-taking and personal knowledge management expert. 
-You have authored several best-selling books and were praised by critics and fans alike, but these years are behind you 
-and fear that your knowledge is becoming obsolete is a world that is changing too fast for you to keep up. To compensate, 
-you have realized and dedicated yourself to training the next generation of note-taking experts.
-Your task is to evaluate the practical atomicity of a note and provide directly applicable suggestions for improvement. 
-Your goal is to help create notes that are highly interconnected, readily usable in writing, and represent 
-clear, singular insights that will remain valuable over time within a personal knowledge system.
+                        You are an experienced note-taking and personal knowledge management expert. Your task is to evaluate the practical atomicity of a note and provide directly applicable suggestions for improvement. Your goal is to help create notes that are highly interconnected, readily usable in writing, and represent clear, singular insights that will remain valuable over time within a personal knowledge system.
 
 Here is the note content to evaluate:
 
@@ -231,7 +243,8 @@ At the end of the conversation, without mentioning the knowledge graph explicitl
             };
         } catch (error) {
             console.error("Error loading system prompt:", error);
-            throw new Error("Failed to load system prompt: " + error.message);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            throw new Error("Failed to load system prompt: " + errorMessage);
         }
     }
 
@@ -240,21 +253,25 @@ At the end of the conversation, without mentioning the knowledge graph explicitl
 
 // Resource handlers
 server.setRequestHandler(ListResourcesRequestSchema, async () => {
-    return resourceProvider.listResources();
+    // Type assertion to satisfy the MCP SDK type requirements
+    return resourceProvider.listResources() as any;
 });
 
 server.setRequestHandler(ListResourceTemplatesRequestSchema, async () => {
-    return resourceProvider.listResourceTemplates();
+    // Type assertion to satisfy the MCP SDK type requirements
+    return resourceProvider.listResourceTemplates() as any;
 });
 
 server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-    return resourceProvider.readResource(request.params.uri);
+    // Type assertion to satisfy the MCP SDK type requirements
+    return resourceProvider.readResource(request.params.uri) as any;
 });
 
 // Handle tool calls
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
-    return handleToolCall(NOTES_PATH, name, args);
+    // Type assertion to satisfy the MCP SDK type requirements
+    return handleToolCall(NOTES_PATH, name, args) as any;
 });
 
 // Start server
@@ -268,7 +285,7 @@ async function runServer() {
     console.error("MCP Notes server running on stdio");
 }
 
-runServer().catch((error) => {
+runServer().catch((error: unknown) => {
     console.error("Fatal error:", error);
     process.exit(1);
 });

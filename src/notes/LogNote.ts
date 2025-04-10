@@ -1,10 +1,16 @@
 import path from 'path';
 import { format } from 'date-fns';
 import { Note } from './Note.js';
-import { loadAndProcessTemplate } from '../../prompts/template-loader.js';
+
+interface LogNoteOptions {
+  date?: Date;
+  tags?: string[];
+}
 
 export class LogNote extends Note {
-  constructor(notesBasePath, options = {}) {
+  template: string;
+
+  constructor(notesBasePath: string, options: LogNoteOptions = {}) {
     const date = options.date || new Date();
     const dateInfo = {
       dayOfWeek: format(date, 'EEEE'),
@@ -21,11 +27,10 @@ export class LogNote extends Note {
       date 
     });
     
-    this.template = `# ${this.dateInfo.dayOfWeek}, ${this.dateInfo.fullDate}\n\n`
+    this.template = `# ${this.dateInfo.dayOfWeek}, ${this.dateInfo.fullDate}\n\n`;
   }
   
-
-  addEntry(entry) {
+  addEntry(entry: string): LogNote {
     // If note doesn't exist yet, initialize with template
     if (!this.exists && !this.content && this.template) {
       this.content = this.template;
@@ -36,7 +41,7 @@ export class LogNote extends Note {
     return this;
   }
   
-  async appendEntry(entry) {
+  async appendEntry(entry: string) {
     // Load existing content if available
     if (!this.exists) {
       await this.load();
@@ -56,5 +61,17 @@ export class LogNote extends Note {
     
     // Save the updated note
     return await this.save();
+  }
+
+  // This method is referenced but not implemented in the original JS file
+  // Adding it here for completeness
+  async loadTemplate(): Promise<void> {
+    try {
+      // Implementation would depend on how templates are loaded
+      // For now, we'll just use the default template
+      this.template = `# ${this.dateInfo.dayOfWeek}, ${this.dateInfo.fullDate}\n\n`;
+    } catch (error) {
+      console.error("Error loading template:", error);
+    }
   }
 }
