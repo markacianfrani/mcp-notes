@@ -9,8 +9,8 @@ import { minimatch } from 'minimatch';
  * @param {string[]} excludePatterns Array of glob patterns to exclude
  * @returns {Promise<string[]>} Array of matching file paths
  */
-export async function searchFiles(rootPath, pattern, excludePatterns = []) {
-  const results = [];
+export async function searchFiles(rootPath: string, pattern: string, excludePatterns: string[] = []): Promise<string[]> {
+  const results: string[] = [];
   
   // Normalize the search pattern for better matching
   const normalizedPattern = pattern.toLowerCase();
@@ -27,7 +27,7 @@ export async function searchFiles(rootPath, pattern, excludePatterns = []) {
     return [];
   }
 
-  async function search(currentPath) {
+  async function search(currentPath: string): Promise<void> {
     try {
       // Read directory entries
       const entries = await fs.readdir(currentPath, { withFileTypes: true });
@@ -74,4 +74,4 @@ export async function searchFiles(rootPath, pattern, excludePatterns = []) {
   console.error(`Search found ${results.length} results for pattern "${pattern}" in ${rootPath}`);
   
   return results;
-} 
+}

@@ -15,8 +15,59 @@ import {
   getFilesystemToolDefinitions
 } from './filesystem.js';
 
+// Types
+interface DateInfo {
+  dayOfWeek: string;
+  fullDate: string;
+  isoDate: string;
+}
+
+interface ToolDefinition {
+  name: string;
+  description: string;
+  inputSchema: {
+    type: string;
+    properties: Record<string, any>;
+    required?: string[];
+  };
+}
+
+interface ToolCallResult {
+  content: Array<{ type: string; text: string }>;
+  isError?: boolean;
+}
+
+interface StickyArgs {
+  thought: string;
+  evaluationStep: number;
+  totalSteps: number;
+  nextStepNeeded: boolean;
+  actionability: number;
+  longevity: number;
+  findability: number;
+  futureReferenceValue: number;
+}
+
+interface LogArgs {
+  notes: string;
+  tags?: string[];
+}
+
+interface RollupArgs {
+  date?: string;
+  accomplishments?: string[];
+  insights?: string[];
+  todos?: string[];
+}
+
+interface WriteNoteArgs {
+  path: string;
+  content: string;
+  tags?: string[];
+}
+
 // Format date
-function formatDate(date = new Date()) {
+function formatDate(date = new Date()): DateInfo {
   // Clone the date to avoid modifying the original
   const localDate = new Date(date);
   // Set time to noon to avoid timezone issues affecting the date
@@ -30,7 +81,7 @@ function formatDate(date = new Date()) {
 }
 
 // Tool definitions
-export function getToolDefinitions() {
+export function getToolDefinitions(): ToolDefinition[] {
   const filesystemTools = getFilesystemToolDefinitions();
   
   return [
@@ -146,29 +197,31 @@ export function getToolDefinitions() {
 }
 
 // Tool handlers
-export async function handleToolCall(notesPath, name, args) {
+export async function handleToolCall(notesPath: string, name: string, args: any): Promise<ToolCallResult> {
   try {
     switch (name) {
       case "sticky": {
-        const result = args.actionability + args.longevity + args.findability + args.futureReferenceValue;  
+        const stickyArgs = args as StickyArgs;
+        const result = stickyArgs.actionability + stickyArgs.longevity + stickyArgs.findability + stickyArgs.futureReferenceValue;  
         const isSticky = result > 18;
         if (isSticky) {
           return {
-              content: [{ type: "text", text: JSON.stringify({result: `Your thought is sticky`, ...args, isSticky}, null, 2) }],
+              content: [{ type: "text", text: JSON.stringify({result: `Your thought is sticky`, ...stickyArgs, isSticky}, null, 2) }],
           };
         } else {
           return {
-            content: [{ type: "text", text: JSON.stringify({result: `Your thought is not sticky`, ...args, isSticky}, null, 2) }],
+            content: [{ type: "text", text: JSON.stringify({result: `Your thought is not sticky`, ...stickyArgs, isSticky}, null, 2) }],
           };
         }
       }
       case "log": {
         try {
-          const logNote = new LogNote(notesPath, { tags: args.tags || [] });
+          const logArgs = args as LogArgs;
+          const logNote = new LogNote(notesPath, { tags: logArgs.tags || [] });
           
           await logNote.load();
           
-          const result = await logNote.appendEntry(args.notes);
+          const result = await logNote.appendEntry(logArgs.notes);
           
           if (!result.success) {
             return {
@@ -184,8 +237,9 @@ export async function handleToolCall(notesPath, name, args) {
             }],
           };
         } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
           return {
-            content: [{ type: "text", text: `Error in log command: ${error.message}` }],
+            content: [{ type: "text", text: `Error in log command: ${errorMessage}` }],
             isError: true,
           };
         }
@@ -193,6 +247,9 @@ export async function handleToolCall(notesPath, name, args) {
       
       case "rollup": {
         try {
+          console.error("Doing Rollup:", args);
+          const rollupArgs = args as RollupArgs;
+          
           // Ensure Rollups directory exists
           const rollupsDir = path.join(notesPath, 'Rollups');
           const success = await ensureDirectory(rollupsDir);
@@ -204,7 +261,7 @@ export async function handleToolCall(notesPath, name, args) {
           }
           
           // Get date info - use provided date or today
-          const targetDate = args.date ? new Date(args.date) : new Date();
+          const targetDate = rollupArgs.date ? new Date(rollupArgs.date) : new Date();
           const dateInfo = formatDate(targetDate);
           
           // Try to read the daily log for this date
@@ -216,20 +273,20 @@ export async function handleToolCall(notesPath, name, args) {
           
           // Format achievements if provided
           let achievements = "";
-          if (args.accomplishments) {
-            achievements = args.accomplishments.map(item => `- ${item}`).join('\n');
+          if (rollupArgs.accomplishments) {
+            achievements = rollupArgs.accomplishments.map(item => `- ${item}`).join('\n');
           }
           
           // Format insights if provided
           let insights = "";
-          if (args.insights) {
-            insights = args.insights.map(item => `- ${item}`).join('\n');
+          if (rollupArgs.insights) {
+            insights = rollupArgs.insights.map(item => `- ${item}`).join('\n');
           }
 
           // Format todos if provided
           let todos = "";
-          if (args.todos) {
-            todos = args.todos.map(item => `- ${item}`).join('\n');
+          if (rollupArgs.todos) {
+            todos = rollupArgs.todos.map(item => `- ${item}`).join('\n');
           }
           
           // Load the template and process it
@@ -254,9 +311,10 @@ export async function handleToolCall(notesPath, name, args) {
             content: [{ type: "text", text: `Rollup saved to ${rollupPath}` }]
           };
         } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
           console.error("Error in rollup command:", error);
           return {
-            content: [{ type: "text", text: `Error creating rollup: ${error.message}` }],
+            content: [{ type: "text", text: `Error creating rollup: ${errorMessage}` }],
             isError: true,
           };
         }
@@ -279,19 +337,21 @@ export async function handleToolCall(notesPath, name, args) {
       
       case "write_note": {
         try {
+          const writeNoteArgs = args as WriteNoteArgs;
+          
           // Validate parameters
-          if (!args.path) {
+          if (!writeNoteArgs.path) {
             throw new Error("'path' parameter is required");
           }
           
-          if (args.content === undefined) {
+          if (writeNoteArgs.content === undefined) {
             throw new Error("'content' parameter is required");
           }
           
           // Create a Note instance
-          const note = new Note(notesPath, args.path, {
-            content: args.content,
-            tags: args.tags || []
+          const note = new Note(notesPath, writeNoteArgs.path, {
+            content: writeNoteArgs.content,
+            tags: writeNoteArgs.tags || []
           });
           
           // Save the note
@@ -314,7 +374,7 @@ export async function handleToolCall(notesPath, name, args) {
             
             // Format the note path for wikilink
             // Remove file extension if present and get the base name
-            const notePath = args.path;
+            const notePath = writeNoteArgs.path;
             const noteBaseName = path.basename(notePath, path.extname(notePath));
             
             // Create wikilink using Obsidian convention
@@ -329,23 +389,25 @@ export async function handleToolCall(notesPath, name, args) {
             return {
               content: [{ 
                 type: "text", 
-                text: `Successfully wrote note to: ${args.path} and updated daily log with link` 
+                text: `Successfully wrote note to: ${writeNoteArgs.path} and updated daily log with link` 
               }]
             };
           } catch (logError) {
+            const errorMessage = logError instanceof Error ? logError.message : String(logError);
             console.error("Error updating log with note link:", logError);
             
             // Still return success for the note creation even if log update fails
             return {
               content: [{ 
                 type: "text", 
-                text: `Successfully wrote note to: ${args.path} (but failed to update daily log: ${logError.message})` 
+                text: `Successfully wrote note to: ${writeNoteArgs.path} (but failed to update daily log: ${errorMessage})` 
               }]
             };
           }
         } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
           return {
-            content: [{ type: "text", text: `Error writing note: ${error.message}` }],
+            content: [{ type: "text", text: `Error writing note: ${errorMessage}` }],
             isError: true
           };
         }

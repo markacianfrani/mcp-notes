@@ -1,18 +1,52 @@
 import fs from "fs/promises";
 import path from "path";
 
+interface Resource {
+  uri: string;
+  name: string;
+  description?: string;
+  mimeType?: string;
+}
+
+interface ResourceTemplate {
+  uriTemplate: string;
+  name: string;
+  description?: string;
+  mimeType?: string;
+}
+
+interface ResourceContent {
+  uri: string;
+  mimeType?: string;
+  text: string;
+}
+
+interface ListResourcesResponse {
+  resources: Resource[];
+}
+
+interface ListResourceTemplatesResponse {
+  resourceTemplates: ResourceTemplate[];
+}
+
+interface ReadResourceResponse {
+  contents: ResourceContent[];
+}
+
 /**
  * Provides access to notes as MCP resources, handling discovery and content retrieval
  */
 export class NotesResourceProvider {
-    constructor(notesPath) {
+    private notesPath: string;
+
+    constructor(notesPath: string) {
         this.notesPath = notesPath;
     }
 
     /**
      * Lists all available resources in the notes directory
      */
-    async listResources() {
+    async listResources(): Promise<ListResourcesResponse> {
         try {
             const resources = await this.#getAllFiles(this.notesPath);
             return { resources };
@@ -25,9 +59,9 @@ export class NotesResourceProvider {
     /**
      * Lists available resource templates
      */
-    async listResourceTemplates() {
+    async listResourceTemplates(): Promise<ListResourceTemplatesResponse> {
         try {
-            const templates = [
+            const templates: ResourceTemplate[] = [
                 {
                     uriTemplate: "file://{notes_path}/Log/{date}.md",
                     name: "Daily Log",
@@ -62,7 +96,7 @@ export class NotesResourceProvider {
     /**
      * Reads the contents of a resource
      */
-    async readResource(uri) {
+    async readResource(uri: string): Promise<ReadResourceResponse> {
         try {
             if (!uri.startsWith("file://")) {
                 throw new Error("Invalid URI scheme");
@@ -105,7 +139,7 @@ export class NotesResourceProvider {
      * Recursively gets all files in a directory
      * @private
      */
-    async #getAllFiles(dir) {
+    async #getAllFiles(dir: string): Promise<Resource[]> {
         const entries = await fs.readdir(dir, { withFileTypes: true });
         const files = await Promise.all(
             entries.map(async (entry) => {

@@ -3,29 +3,32 @@
   "version": "0.1.2-alpha",
   "description": "Personal knowledge management system built on the Model Context Protocol (MCP)",
   "type": "module",
-  "main": "index.js",
+  "main": "dist/index.js",
   "author": "Mark Cianfrani <mark@cianfrani.me>",
   "license": "MIT",
   "homepage": "https://cianfrani.dev",
   "bin": {
-    "mcp-notes": "index.js"
+    "mcp-notes": "dist/index.js"
   },
   "scripts": {
-    "start": "node index.js",
-    "build": "mkdir -p dist && cp -r index.js src prompts search-utils.js dist/",
+    "build": "tsc && shx chmod +x dist/*.js",
     "prepare": "npm run build",
-    "prepublishOnly": "npm run build",
-    "dev": "npx @modelcontextprotocol/inspector node index.js 'Notes'"
+    "watch": "tsc --watch",
+    "start": "node dist/index.js",
+    "dev": "npx @modelcontextprotocol/inspector node dist/index.js 'Notes'"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.9.0",
     "date-fns": "^4.1.0",
     "minimatch": "^10.0.1"
   },
+  "devDependencies": {
+    "@types/node": "^22",
+    "shx": "^0.3.4",
+    "typescript": "^5.6.2"
+  },
   "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
+    "dist"
   ],
   "publishConfig": {
     "access": "public"

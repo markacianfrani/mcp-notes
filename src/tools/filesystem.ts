@@ -3,8 +3,45 @@ import fs from 'fs/promises';
 import { searchFiles } from '../../search-utils.js';
 import { loadSystemPrompt } from '../../prompts/template-loader.js';
 
+// Types
+interface ToolDefinition {
+  name: string;
+  description: string;
+  inputSchema: {
+    type: string;
+    properties: Record<string, any>;
+    required?: string[];
+  };
+}
+
+interface ToolCallResult {
+  content: Array<{ type: string; text: string }>;
+  isError?: boolean;
+}
+
+interface SearchFilesArgs {
+  pattern: string;
+  excludePatterns?: string[];
+}
+
+interface ReadNoteArgs {
+  path: string;
+}
+
+interface ReadMultipleNotesArgs {
+  paths: string[];
+}
+
+interface ListDirectoryArgs {
+  path?: string;
+}
+
+interface CreateDirectoryArgs {
+  path: string;
+}
+
 // Tool definitions
-export function getFilesystemToolDefinitions() {
+export function getFilesystemToolDefinitions(): ToolDefinition[] {
   return [
     {
       name: "search_files",
@@ -97,20 +134,20 @@ export function getFilesystemToolDefinitions() {
 }
 
 // Helper functions
-export async function ensureDirectory(dirPath) {
+export async function ensureDirectory(dirPath: string): Promise<boolean> {
   try {
     await fs.mkdir(dirPath, { recursive: true });
     return true;
   } catch (err) {
-    if (err.code !== 'EEXIST') {
-      console.error(`Error creating directory ${dirPath}:`, err);
-      return false;
+    if (err instanceof Error && 'code' in err && err.code === 'EEXIST') {
+      return true;
     }
-    return true;
+    console.error(`Error creating directory ${dirPath}:`, err);
+    return false;
   }
 }
 
-export async function initializeNotesDirectory(notesPath) {
+export async function initializeNotesDirectory(notesPath: string): Promise<void> {
   // Create base directories
   await ensureDirectory(notesPath);
   await ensureDirectory(path.join(notesPath, 'Log'));
@@ -132,7 +169,7 @@ export async function initializeNotesDirectory(notesPath) {
 }
 
 // Tool handlers
-export async function handleSearchFiles(notesPath, args) {
+export async function handleSearchFiles(notesPath: string, args: SearchFilesArgs): Promise<ToolCallResult> {
   try {
     // Validate pattern is provided
     if (!args.pattern) {
@@ -153,7 +190,7 @@ export async function handleSearchFiles(notesPath, args) {
     }
     
     // Format results as relative paths
-    const formattedResults = results.map(filePath => 
+    const formattedResults = results.map((filePath: string) => 
       path.relative(notesPath, filePath)
     );
     
@@ -164,14 +201,15 @@ export async function handleSearchFiles(notesPath, args) {
       }]
     };
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return {
-      content: [{ type: "text", text: `Error searching files: ${error.message}` }],
+      content: [{ type: "text", text: `Error searching files: ${errorMessage}` }],
       isError: true
     };
   }
 }
 
-export async function handleReadNote(notesPath, args) {
+export async function handleReadNote(notesPath: string, args: ReadNoteArgs): Promise<ToolCallResult> {
   try {
     // Validate path is provided
     if (!args.path) {
@@ -192,17 +230,19 @@ export async function handleReadNote(notesPath, args) {
         content: [{ type: "text", text: content }]
       };
     } catch (error) {
-      throw new Error(`Error reading file: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Error reading file: ${errorMessage}`);
     }
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return {
-      content: [{ type: "text", text: `Error reading note: ${error.message}` }],
+      content: [{ type: "text", text: `Error reading note: ${errorMessage}` }],
       isError: true
     };
   }
 }
 
-export async function handleReadMultipleNotes(notesPath, args) {
+export async function handleReadMultipleNotes(notesPath: string, args: ReadMultipleNotesArgs): Promise<ToolCallResult> {
   try {
     // Validate paths is provided and is an array
     if (!args.paths || !Array.isArray(args.paths)) {
@@ -224,10 +264,12 @@ export async function handleReadMultipleNotes(notesPath, args) {
             const content = await fs.readFile(filePath, 'utf-8');
             return `${notePath}:\n${content}\n`;
           } catch (error) {
-            return `${notePath}: Error - ${error.message}`;
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            return `${notePath}: Error - ${errorMessage}`;
           }
         } catch (error) {
-          return `${notePath}: Error - ${error.message}`;
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          return `${notePath}: Error - ${errorMessage}`;
         }
       })
     );
@@ -236,14 +278,15 @@ export async function handleReadMultipleNotes(notesPath, args) {
       content: [{ type: "text", text: results.join("\n---\n") }]
     };
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return {
-      content: [{ type: "text", text: `Error reading notes: ${error.message}` }],
+      content: [{ type: "text", text: `Error reading notes: ${errorMessage}` }],
       isError: true
     };
   }
 }
 
-export async function handleListDirectory(notesPath, args) {
+export async function handleListDirectory(notesPath: string, args: ListDirectoryArgs): Promise<ToolCallResult> {
   try {
     // Use provided path or default to NOTES_PATH root
     const dirPath = args.path ? path.join(notesPath, args.path) : notesPath;
@@ -268,17 +311,19 @@ export async function handleListDirectory(notesPath, args) {
         }]
       };
     } catch (error) {
-      throw new Error(`Error reading directory: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Error reading directory: ${errorMessage}`);
     }
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return {
-      content: [{ type: "text", text: `Error listing directory: ${error.message}` }],
+      content: [{ type: "text", text: `Error listing directory: ${errorMessage}` }],
       isError: true
     };
   }
 }
 
-export async function handleCreateDirectory(notesPath, args) {
+export async function handleCreateDirectory(notesPath: string, args: CreateDirectoryArgs): Promise<ToolCallResult> {
   try {
     // Validate path parameter
     if (!args.path) {
@@ -301,12 +346,14 @@ export async function handleCreateDirectory(notesPath, args) {
         }]
       };
     } catch (error) {
-      throw new Error(`Error creating directory: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Error creating directory: ${errorMessage}`);
     }
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return {
-      content: [{ type: "text", text: `Error creating directory: ${error.message}` }],
+      content: [{ type: "text", text: `Error creating directory: ${errorMessage}` }],
       isError: true
     };
   }
-} 
+}

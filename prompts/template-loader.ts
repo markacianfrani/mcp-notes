@@ -2,8 +2,13 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+interface CachedTemplate {
+  content: string;
+  timestamp: number;
+}
+
 // Cache mechanism for templates
-const templateCache = new Map();
+const templateCache = new Map<string, CachedTemplate>();
 const FILE_CACHE_TTL = 60 * 1000; // 1 minute cache TTL
 
 /**
@@ -11,12 +16,12 @@ const FILE_CACHE_TTL = 60 * 1000; // 1 minute cache TTL
  * @param {string} templatePath - Path to the template file
  * @returns {Promise<string>} - The template content
  */
-export async function loadTemplate(templatePath) {
+export async function loadTemplate(templatePath: string): Promise<string> {
   const now = Date.now();
   
   // Check if we have a cached version that's still valid
   if (templateCache.has(templatePath)) {
-    const { content, timestamp } = templateCache.get(templatePath);
+    const { content, timestamp } = templateCache.get(templatePath)!;
     
     // If the cached version is still fresh, return it
     if (now - timestamp < FILE_CACHE_TTL) {
@@ -47,7 +52,7 @@ export async function loadTemplate(templatePath) {
  * @param {Object} values - Key-value pairs for replacement
  * @returns {string} - The processed template
  */
-export function processTemplate(template, values) {
+export function processTemplate(template: string, values: Record<string, string>): string {
   return template.replace(/\{\{(\w+)\}\}/g, (match, key) => {
     return values[key] !== undefined ? values[key] : match;
   });
@@ -57,7 +62,7 @@ export function processTemplate(template, values) {
  * Get base directory for templates
  * @returns {string} - Base directory path
  */
-function getBaseDir() {
+function getBaseDir(): string {
   // First, check if we have an environment variable specifying the app directory
   if (process.env.MCP_NOTES_DIR) {
     return process.env.MCP_NOTES_DIR;
@@ -80,7 +85,7 @@ function getBaseDir() {
  * @param {Object} values - Key-value pairs for replacement
  * @returns {Promise<string>} - The processed template
  */
-export async function loadAndProcessTemplate(templateName, values = {}) {
+export async function loadAndProcessTemplate(templateName: string, values: Record<string, string> = {}): Promise<string> {
   const baseDir = getBaseDir();
   
   // Try multiple possible locations for the template
@@ -93,13 +98,13 @@ export async function loadAndProcessTemplate(templateName, values = {}) {
   ];
   
   // Try each path in order
-  let lastError;
+  let lastError: Error | undefined;
   for (const templatePath of possiblePaths) {
     try {
       const template = await loadTemplate(templatePath);
       return processTemplate(template, values);
     } catch (err) {
-      lastError = err;
+      lastError = err as Error;
     }
   }
   
@@ -111,7 +116,7 @@ export async function loadAndProcessTemplate(templateName, values = {}) {
  * Load the system prompt
  * @returns {Promise<string>} - The system prompt content
  */
-export async function loadSystemPrompt() {
+export async function loadSystemPrompt(): Promise<string> {
   const baseDir = getBaseDir();
   
   // Try multiple possible locations for the system prompt
@@ -124,13 +129,13 @@ export async function loadSystemPrompt() {
   ];
   
   // Try each path in order
-  let lastError;
+  let lastError: Error | undefined;
   for (const promptPath of possiblePaths) {
     try {
       const content = await loadTemplate(promptPath);
       return content;
     } catch (err) {
-      lastError = err;
+      lastError = err as Error;
     }
   }
   
