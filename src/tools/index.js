@@ -304,12 +304,45 @@ export async function handleToolCall(notesPath, name, args) {
             };
           }
           
-          return {
-            content: [{ 
-              type: "text", 
-              text: `Successfully wrote note to: ${args.path}` 
-            }]
-          };
+          // After successfully saving the note, append an entry to the daily log
+          try {
+            // Create a LogNote instance for today
+            const logNote = new LogNote(notesPath);
+            
+            // Load existing content if available
+            await logNote.load();
+            
+            // Format the note path for wikilink
+            // Remove file extension if present and get the base name
+            const notePath = args.path;
+            const noteBaseName = path.basename(notePath, path.extname(notePath));
+            
+            // Create wikilink using Obsidian convention
+            const wikilink = `[[${noteBaseName}]]`;
+            
+            // Create log entry with the wikilink
+            const logEntry = `Created note: ${wikilink}`;
+            
+            // Append the entry to the log
+            await logNote.appendEntry(logEntry);
+            
+            return {
+              content: [{ 
+                type: "text", 
+                text: `Successfully wrote note to: ${args.path} and updated daily log with link` 
+              }]
+            };
+          } catch (logError) {
+            console.error("Error updating log with note link:", logError);
+            
+            // Still return success for the note creation even if log update fails
+            return {
+              content: [{ 
+                type: "text", 
+                text: `Successfully wrote note to: ${args.path} (but failed to update daily log: ${logError.message})` 
+              }]
+            };
+          }
         } catch (error) {
           return {
             content: [{ type: "text", text: `Error writing note: ${error.message}` }],
