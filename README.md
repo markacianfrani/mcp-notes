@@ -133,6 +133,12 @@ Evaluates the "stickiness" of a thought based on actionability, longevity, finda
 
 Invoke with: "Is this idea sticky?"
 
+#### `evaluateInsight`
+
+Evaluates the long-term value and significance of an insight or thought.
+
+Invoke with: "Is this insight valuable for the long term?"
+
 ### 📂 File System Tools
 
 #### `search_files`

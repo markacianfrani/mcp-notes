@@ -48,6 +48,9 @@ interface StickyArgs {
   futureReferenceValue: number;
 }
 
+// Rename to EvaluateInsightArgs
+interface EvaluateInsightArgs extends StickyArgs {}
+
 interface LogArgs {
   notes: string;
   tags?: string[];
@@ -110,14 +113,15 @@ export function getToolDefinitions(): ToolDefinition[] {
       }
     },
     {
-      name: "sticky",
+      name: "evaluateInsight",
       description: `
-      Evaluate the stickiness of a thought. Based on the following criteria: 
+      Evaluate the long-term value and significance of an insight or thought based on the following criteria: 
       1. Actionability (1-10): Can this be applied to future work? Is there any information that can be used to apply this thought to future work in different contexts? Is the problem it solves clear?
       2. Longevity (1-10): Will this be relevant months or years from now?
       3. Findability (1-10): Would this be hard to rediscover if forgotten?
       4. Future Reference Value (1-10): How likely are you to need this again?
-      Thoughts to ignore: 
+      
+      Insights to ignore: 
       1. Trivial syntax details
       2. Redundant information
       `,
@@ -140,7 +144,7 @@ export function getToolDefinitions(): ToolDefinition[] {
       name: "rollup",
       description: `
        Synthesize my daily note to create an organized rollup of the most important notes with clear categories, connections, and action items. Optionally specify a date (YYYY-MM-DD).
-       Only include notes that actually add long-term value. If you are unsure, call the /sticky tool to evaluate the stickiness of the thought.
+       Only include notes that actually add long-term value. If you are unsure, call the /evaluateInsight tool to evaluate the long-term value of the thought.
        If you do not have enough information, stop and ask the user for more information.
        It is better to not log anything than log something that is not useful.
       `,
@@ -200,17 +204,17 @@ export function getToolDefinitions(): ToolDefinition[] {
 export async function handleToolCall(notesPath: string, name: string, args: any): Promise<ToolCallResult> {
   try {
     switch (name) {
-      case "sticky": {
-        const stickyArgs = args as StickyArgs;
-        const result = stickyArgs.actionability + stickyArgs.longevity + stickyArgs.findability + stickyArgs.futureReferenceValue;  
-        const isSticky = result > 18;
-        if (isSticky) {
+      case "evaluateInsight": {
+        const insightArgs = args as EvaluateInsightArgs;
+        const result = insightArgs.actionability + insightArgs.longevity + insightArgs.findability + insightArgs.futureReferenceValue;  
+        const isValuable = result > 18;
+        if (isValuable) {
           return {
-              content: [{ type: "text", text: JSON.stringify({result: `Your thought is sticky`, ...stickyArgs, isSticky}, null, 2) }],
+              content: [{ type: "text", text: JSON.stringify({result: `This insight has significant long-term value`, ...insightArgs, isValuable}, null, 2) }],
           };
         } else {
           return {
-            content: [{ type: "text", text: JSON.stringify({result: `Your thought is not sticky`, ...stickyArgs, isSticky}, null, 2) }],
+            content: [{ type: "text", text: JSON.stringify({result: `This insight may not have sufficient long-term value`, ...insightArgs, isValuable}, null, 2) }],
           };
         }
       }

@@ -65,9 +65,9 @@ const PROMPTS: Prompts = {
         description:
             "Personal pair programmer and frictionless note-taker focused on capturing insights, tracking accomplishments, and remembering useful information"
     },
-    "is-this-atomic": {
-        name: "is-this-atomic",
-        description: "Determine if the user's thought is atomic enough to be captured",
+    "idea-smasher": {
+        name: "idea-smasher",
+        description: "SMASH your big ideas into smaller, more digestible atomic notes! 💥",
         arguments: [
             { name: "thought", description: "text to analyze", required: true }
         ]
@@ -111,7 +111,7 @@ server.setRequestHandler(GetPromptRequestSchema, async (request) => {
     if (!prompt) {
         throw new Error(`Prompt not found: ${request.params.name}`);
     }
-    if (request.params.name === "is-this-atomic") {
+    if (request.params.name === "idea-smasher") {
         return {
             messages: [
                 { role: "assistant", 
