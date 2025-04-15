@@ -36,8 +36,11 @@ export class LogNote extends Note {
       this.content = this.template;
     }
     
-    // Add entry with timestamp
-    this.content += `\n### [${this.dateInfo.time}]\n${entry}`;
+    // Generate a fresh timestamp for this entry
+    const currentTime = format(new Date(), 'h:mm a');
+    
+    // Add entry with fresh timestamp
+    this.content += `\n### [${currentTime}]\n${entry}`;
     return this;
   }
   
