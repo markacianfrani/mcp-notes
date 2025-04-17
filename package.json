@@ -1,6 +1,6 @@
 {
   "name": "@cianfrani/mcp-notes",
-  "version": "0.1.2-alpha",
+  "version": "0.2.0-alpha",
   "description": "Personal knowledge management system built on the Model Context Protocol (MCP)",
   "type": "module",
   "main": "dist/index.js",

@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { loadAndProcessTemplate } from '../../prompts/template-loader.js';
 import { Note } from '../notes/Note.js';
 import { LogNote } from '../notes/LogNote.js';
+import { TAG_VALIDATION_DESCRIPTION } from '../utils/tag-validator.js';
 import {
   ensureDirectory,
   initializeNotesDirectory,
@@ -100,7 +101,9 @@ export function getToolDefinitions(): ToolDefinition[] {
           tags: { 
             type: "array",
             items: { type: "string" },
-            description: `Analyze the note's content and identify key themes, concepts, and categories that connect it to other notes.
+            description: `${TAG_VALIDATION_DESCRIPTION}
+
+              Analyze the note's content and identify key themes, concepts, and categories that connect it to other notes.
               Consider:
               - Core topics and themes present in the note
               - Broader domains or areas of knowledge
@@ -190,7 +193,9 @@ export function getToolDefinitions(): ToolDefinition[] {
           tags: {
             type: "array",
             items: { type: "string" },
-            description: "Tags to add to the note's frontmatter. Will be merged with existing tags if present."
+            description: `${TAG_VALIDATION_DESCRIPTION}
+            
+            Tags to add to the note's frontmatter. Will be merged with existing tags if present.`
           }
         },
         required: ["path", "content"]
@@ -221,25 +226,41 @@ export async function handleToolCall(notesPath: string, name: string, args: any)
       case "log": {
         try {
           const logArgs = args as LogArgs;
-          const logNote = new LogNote(notesPath, { tags: logArgs.tags || [] });
+          
+          // Create LogNote without tags first
+          const logNote = new LogNote(notesPath);
           
           await logNote.load();
           
-          const result = await logNote.appendEntry(logArgs.notes);
-          
-          if (!result.success) {
+          try {
+            // Add tags separately to handle validation errors
+            if (logArgs.tags && logArgs.tags.length > 0) {
+              logNote.addTags(logArgs.tags);
+            }
+            
+            const result = await logNote.appendEntry(logArgs.notes);
+            
+            if (!result.success) {
+              return {
+                content: [{ type: "text", text: `Error creating log: ${result.error}` }],
+                isError: true,
+              };
+            }
+            
             return {
-              content: [{ type: "text", text: `Error creating log: ${result.error}` }],
+              content: [{ 
+                type: "text", 
+                text: `I've added your note to today's log at ${result.path}.`
+              }],
+            };
+          } catch (tagError) {
+            // Specific handling for tag validation errors
+            const errorMessage = tagError instanceof Error ? tagError.message : String(tagError);
+            return {
+              content: [{ type: "text", text: errorMessage }],
               isError: true,
             };
           }
-          
-          return {
-            content: [{ 
-              type: "text", 
-              text: `I've added your note to today's log at ${result.path}.`
-            }],
-          };
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
           return {
@@ -352,14 +373,19 @@ export async function handleToolCall(notesPath: string, name: string, args: any)
             throw new Error("'content' parameter is required");
           }
           
-          // Create a Note instance
-          const note = new Note(notesPath, writeNoteArgs.path, {
-            content: writeNoteArgs.content,
-            tags: writeNoteArgs.tags || []
-          });
-          
-          // Save the note
-          const result = await note.save();
+          try {
+            // Create a Note instance with content only
+            const note = new Note(notesPath, writeNoteArgs.path, {
+              content: writeNoteArgs.content
+            });
+            
+            // Add tags separately to handle validation errors
+            if (writeNoteArgs.tags && writeNoteArgs.tags.length > 0) {
+              note.addTags(writeNoteArgs.tags);
+            }
+            
+            // Save the note
+            const result = await note.save();
           
           if (!result.success) {
             return {
@@ -406,6 +432,13 @@ export async function handleToolCall(notesPath: string, name: string, args: any)
                 type: "text", 
                 text: `Successfully wrote note to: ${writeNoteArgs.path} (but failed to update daily log: ${errorMessage})` 
               }]
+            };
+          }
+          } catch (tagError) {
+            const errorMessage = tagError instanceof Error ? tagError.message : String(tagError);
+            return {
+              content: [{ type: "text", text: `Error writing note: ${errorMessage}` }],
+              isError: true
             };
           }
         } catch (error) {

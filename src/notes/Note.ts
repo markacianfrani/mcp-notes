@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { format } from 'date-fns';
+import { validateTag } from '../utils/tag-validator.js';
 
 interface DateInfo {
   dayOfWeek: string;
@@ -130,8 +131,19 @@ created: ${this.dateInfo.isoDate}${tagString}
   }
   
   addTags(newTags: string[]): Note {
-    // Merge tags, removing duplicates
-    this.tags = [...new Set([...this.tags, ...newTags])];
+    for (const tag of newTags) {
+      const validation = validateTag(tag);
+      if (!validation.isValid) {
+        throw new Error(`Invalid tag "${tag}": ${validation.error}`);
+      }
+      
+      // Add valid tag (normalized to lowercase)
+      const normalizedTag = tag.toLowerCase();
+      if (!this.tags.includes(normalizedTag)) {
+        this.tags.push(normalizedTag);
+      }
+    }
+    
     return this;
   }
   
