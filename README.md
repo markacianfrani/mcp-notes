@@ -1,8 +1,18 @@
 # 📚 MCP Notes
 
+[![smithery badge](https://smithery.ai/badge/@markacianfrani/mcp-notes)](https://smithery.ai/server/@markacianfrani/mcp-notes)
+
 A personal knowledge management system built on the Model Context Protocol (MCP) that transforms daily notes into organized, searchable knowledge.
 
 ## 🚀 Usage
+
+### Installing via Smithery
+
+To install MCP Notes for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@markacianfrani/mcp-notes):
+
+```bash
+npx -y @smithery/cli install @markacianfrani/mcp-notes --client claude
+```
 
 ### 🛠️ Manual Setup
 
